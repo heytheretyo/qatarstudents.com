@@ -3,12 +3,10 @@ import morgan from "morgan";
 import helmet from "helmet";
 import cors from "cors";
 import session from "express-session";
-import passport from "passport";
 import bodyparser from "body-parser";
 import * as middlewares from "./middlewares";
 import api from "./api";
 import MessageResponse from "./interfaces/MessageResponse";
-import { configure as passportConfigure } from "./config/passport";
 
 require("dotenv").config();
 
@@ -30,15 +28,11 @@ app.use(
   })
 );
 
-passportConfigure(app);
-
 app.get<{}, MessageResponse>("/", (req, res) => {
   res.json({
     message: "welcome to the qatarstudents.com site!",
   });
 });
-
-app.get("/google", passport.authenticate("google", { session: false }));
 
 app.use("/api/v1", api);
 

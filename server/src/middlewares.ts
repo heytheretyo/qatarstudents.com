@@ -27,8 +27,9 @@ export function isAuthenticated(
   res: Response<ErrorResponse>,
   next: NextFunction
 ) {
-  if (req.isAuthenticated()) {
-    return next();
+  if (req.session.user) {
+    next();
+  } else {
+    res.status(401).json({ error: "unauthorized to enter" } as any);
   }
-  res.redirect("/");
 }

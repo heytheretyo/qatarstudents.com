@@ -1,6 +1,7 @@
 import express from "express";
-import prisma from "../../utils/db";
+import prisma from "../utils/db";
 import axios from "axios";
+import bcrypt from "bcrypt";
 import { User } from "@prisma/client";
 
 const router = express.Router();
@@ -10,17 +11,36 @@ type Response = string;
 router.post<{}, Response>("/signup", async (req, res) => {
   const { username, password, email } = req.body;
 
-  const existingUser = await prisma.user.findUnique({
+  if (!username || !password || !email) {
+    return res.status(401).json({
+      message: "invalid payload",
+    } as any);
+  }
+
+  const existingEmail = await prisma.user.findUnique({
     where: { email: email as string },
   });
+  const existingUsername = await prisma.user.findUnique({
+    where: { email: username as string },
+  });
 
-  if (existingUser) {
-    res.status(200).json({
+  if (existingEmail) {
+    return res.status(401).json({
       message: "email already associated with an account",
     } as any);
   }
 
-  console.log("adding user");
+  if (existingUsername) {
+    return res.status(401).json({
+      message: "username already associated with an account",
+    } as any);
+  }
+
+  if (password.length < 8) {
+    return res.status(401).json({
+      message: "password must be at least 8 characters long",
+    } as any);
+  }
 
   const user = await prisma.user.create({
     data: {
@@ -29,22 +49,53 @@ router.post<{}, Response>("/signup", async (req, res) => {
       password: password,
     },
   });
+
+  req.session.user = user;
+
+  return res.status(200).json(user as any);
 });
 
-router.post<{}, Response>("/signin", (req, res) => {
-  const { username, password, email } = req.body;
+router.post<{}, Response>("/signin", async (req, res) => {
+  const { password, username } = req.body;
+
+  if (!username) {
+    return res.status(401).json({
+      message: "invalid payload",
+    } as any);
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { username: username as string },
+  });
+
+  if (!user) {
+    return res.status(401).json({
+      message: "email or password is invalid",
+    } as any);
+  }
+
+  if (user.password == null) {
+    return res.status(401).json({
+      message:
+        "this account has no password but is connected via google, reset password to add password",
+    } as any);
+  }
+
+  const match = bcrypt.compare(password, user.password);
+
+  if (!match) {
+    return res
+      .status(401)
+      .json({ message: "email or password is invalid" } as any);
+  }
+
+  req.session.user = user;
+  return res.status(200).json(user as any);
 });
 
 router.get("/signout", async (req, res) => {
-  req.logout((err) => {
-    if (err) {
-      console.error(err);
-    }
-  });
-});
-
-router.get<{}, Response>("/refreshtoken", (req, res) => {
-  res.json("hello world");
+  req.session.user = {};
+  return res.status(200).json({ message: "user has signed out" });
 });
 
 router.get("/google", (req, res) => {
@@ -79,8 +130,6 @@ router.get<{}, Response>("/google/callback", async (req, res) => {
 
   const { id, name, email } = userResponse.data;
 
-  console.log(userResponse.data);
-
   if (req.session.user) {
     const authenticatedUser = req.session.user as User;
 
@@ -103,11 +152,19 @@ router.get<{}, Response>("/google/callback", async (req, res) => {
     where: { email: email as string },
   });
 
-  if (existingUser) {
-    res.status(401).json({
-      message: "Email already associated with an account. Please log in.",
+  // sign in via google
+
+  if (existingUser?.googleId) {
+    req.session.user = existingUser;
+    console.log("signed in via google");
+    return res.status(200).json(existingUser as any);
+  }
+
+  if (existingUser && !existingUser?.googleId) {
+    return res.status(401).json({
+      message:
+        "email already associated with an account. please log in if you want to connect via google.",
     } as any);
-    return;
   }
 
   const newUser = await prisma.user.create({
@@ -118,8 +175,9 @@ router.get<{}, Response>("/google/callback", async (req, res) => {
     },
   });
 
-  req.session.user = newUser; // Store the user information in the session
-  res.json(newUser as any);
+  req.session.user = newUser;
+
+  return res.status(200).json(newUser as any);
 });
 
 export default router;

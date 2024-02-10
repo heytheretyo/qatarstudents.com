@@ -21,3 +21,14 @@ export function errorHandler(
     stack: process.env.NODE_ENV === "production" ? "🥞" : err.stack,
   });
 }
+
+export function isAuthenticated(
+  req: Request,
+  res: Response<ErrorResponse>,
+  next: NextFunction
+) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.redirect("/");
+}

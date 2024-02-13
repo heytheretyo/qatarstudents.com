@@ -17,14 +17,27 @@ app.use(bodyparser.json());
 
 app.use(morgan("dev"));
 app.use(helmet());
-app.use(cors());
 app.use(express.json());
+
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+    methods: ["POST", "PUT", "GET", "OPTIONS", "HEAD"],
+  })
+);
 
 app.use(
   session({
     secret: process.env.SESSION_SECRET as string,
     resave: false,
     saveUninitialized: false,
+    cookie: {
+      secure: false, // turn back on during prod
+      sameSite: "lax",
+      path: "/",
+      httpOnly: true,
+    },
   })
 );
 

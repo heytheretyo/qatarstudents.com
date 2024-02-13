@@ -8,7 +8,7 @@ const router = express.Router();
 
 type Response = string;
 
-router.post<{}, Response>("/signup", async (req, res) => {
+router.post<{}, Response>("/register", async (req, res) => {
   const { username, password, email } = req.body;
 
   if (!username || !password || !email) {
@@ -55,7 +55,7 @@ router.post<{}, Response>("/signup", async (req, res) => {
   return res.status(200).json(user as any);
 });
 
-router.post<{}, Response>("/signin", async (req, res) => {
+router.post<{}, Response>("/login", async (req, res) => {
   const { password, username } = req.body;
 
   if (!username) {
@@ -93,7 +93,7 @@ router.post<{}, Response>("/signin", async (req, res) => {
   return res.status(200).json(user as any);
 });
 
-router.get("/signout", async (req, res) => {
+router.get("/logout", async (req, res) => {
   req.session.user = {};
   return res.status(200).json({ message: "user has signed out" });
 });

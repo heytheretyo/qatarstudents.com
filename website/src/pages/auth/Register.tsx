@@ -1,12 +1,12 @@
 import AuthOptions from "../../components/AuthOptions";
-import LoginForm from "../../components/LoginForm";
+import RegisterForm from "../../components/RegisterForm";
 
 function Login() {
   return (
     <>
       <div className="flex flex-col pt-8 px-7">
         <AuthOptions />
-        <LoginForm />
+        <RegisterForm />
       </div>
     </>
   );

@@ -2,6 +2,10 @@
   "name": "website",
   "version": "0.1.0",
   "private": true,
+  "author": {
+    "name": "tyoan",
+    "url": "https://github.com/heytheretyo/qatarstudents.com"
+  },
   "dependencies": {
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^13.0.0",

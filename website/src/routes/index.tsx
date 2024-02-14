@@ -1,5 +1,7 @@
 import Login from "../pages/auth/Login";
-import Home from "../pages/home";
+import Register from "../pages/auth/Register";
+import Blog from "../pages/Blog";
+import Home from "../pages/Home";
 
 const mainRoutes = [
   {
@@ -9,6 +11,14 @@ const mainRoutes = [
   {
     path: "/login",
     element: <Login />,
+  },
+  {
+    path: "/register",
+    element: <Register />,
+  },
+  {
+    path: "/blog",
+    element: <Blog />,
   },
 ];
 

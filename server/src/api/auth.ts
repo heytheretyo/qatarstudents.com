@@ -3,95 +3,110 @@ import prisma from "../utils/db";
 import axios from "axios";
 import bcrypt from "bcrypt";
 import { User } from "@prisma/client";
+import { createValidator } from "express-joi-validation";
+import Joi from "joi";
 
 const router = express.Router();
 
 type Response = string;
 
-router.post<{}, Response>("/register", async (req, res) => {
-  const { username, password, email } = req.body;
+const validator = createValidator();
 
-  if (!username || !password || !email) {
-    return res.status(401).json({
-      message: "invalid payload",
-    } as any);
-  }
-
-  const existingEmail = await prisma.user.findUnique({
-    where: { email: email as string },
-  });
-  const existingUsername = await prisma.user.findUnique({
-    where: { email: username as string },
-  });
-
-  if (existingEmail) {
-    return res.status(401).json({
-      message: "email already associated with an account",
-    } as any);
-  }
-
-  if (existingUsername) {
-    return res.status(401).json({
-      message: "username already associated with an account",
-    } as any);
-  }
-
-  if (password.length < 8) {
-    return res.status(401).json({
-      message: "password must be at least 8 characters long",
-    } as any);
-  }
-
-  const user = await prisma.user.create({
-    data: {
-      username: username,
-      email: email as string,
-      password: password,
-    },
-  });
-
-  req.session.user = user;
-
-  return res.status(200).json(user as any);
+const registerSchema = Joi.object({
+  username: Joi.string().required().max(15),
+  email: Joi.string().email().required(),
+  password: Joi.string().min(8).required(),
 });
 
-router.post<{}, Response>("/login", async (req, res) => {
-  const { password, username } = req.body;
-
-  if (!username) {
-    return res.status(401).json({
-      message: "invalid payload",
-    } as any);
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { username: username as string },
-  });
-
-  if (!user) {
-    return res.status(401).json({
-      message: "email or password is invalid",
-    } as any);
-  }
-
-  if (user.password == null) {
-    return res.status(401).json({
-      message:
-        "this account has no password but is connected via google, reset password to add password",
-    } as any);
-  }
-
-  const match = bcrypt.compare(password, user.password);
-
-  if (!match) {
-    return res
-      .status(401)
-      .json({ message: "email or password is invalid" } as any);
-  }
-
-  req.session.user = user;
-  return res.status(200).json(user as any);
+const loginSchema = Joi.object({
+  username: Joi.string().required(),
+  password: Joi.string().required(),
 });
+
+router.post<{}, Response>(
+  "/register",
+  validator.body(registerSchema),
+  async (req, res) => {
+    const { username, password, email } = req.body;
+
+    const existingEmail = await prisma.user.findUnique({
+      where: { email: email as string },
+    });
+    const existingUsername = await prisma.user.findUnique({
+      where: { username: username as string },
+    });
+
+    if (existingEmail) {
+      return res.status(401).json({
+        message: "email already associated with an account",
+      } as any);
+    }
+
+    if (existingUsername) {
+      return res.status(401).json({
+        message: "username already associated with an account",
+      } as any);
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await prisma.user.create({
+      data: {
+        username: username,
+        email: email as string,
+        password: hashedPassword,
+      },
+    });
+
+    req.session.user = user;
+
+    return res.status(200).json(user as any);
+  }
+);
+
+router.post<{}, Response>(
+  "/login",
+  validator.body(loginSchema),
+  async (req, res) => {
+    const { password, username } = req.body;
+
+    if (!username) {
+      return res.status(401).json({
+        message: "invalid payload",
+      } as any);
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { username: username as string },
+    });
+
+    if (!user) {
+      return res.status(401).json({
+        message: "email or password is invalid",
+      } as any);
+    }
+
+    console.log(user);
+
+    if (user.password == null) {
+      return res.status(401).json({
+        message:
+          "this account is connected via google, reset password to add password",
+      } as any);
+    }
+
+    const match = await bcrypt.compare(password, user.password);
+
+    if (!match) {
+      return res
+        .status(401)
+        .json({ message: "email or password is invalid" } as any);
+    }
+
+    req.session.user = user;
+    return res.status(200).json(user as any);
+  }
+);
 
 router.get("/logout", async (req, res) => {
   req.session.user = {};

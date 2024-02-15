@@ -4,12 +4,14 @@
     "sourceMap": true,
     "target": "esnext",
     "module": "commonjs",
+    "rootDir": "src",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": true,
     "strict": true,
     "skipLibCheck": true,
-    "typeRoots": ["./node_modules/@types", "./src/types"]
+    "typeRoots": ["./node_modules/@types", "src/typings/"],
+    "types": ["express"]
   },
 
   "include": ["./*.js", "src/**/*.ts", "test/**/*.ts"]

@@ -34,9 +34,10 @@ model User {
 
   role UserRole @default(USER)
 
-  threads  Thread[]
-  Reaction Reaction[]
-  Reply    Reply[]
+  threads      Thread[]
+  reaction     Reaction[]
+  reply        Reply[]
+  RefreshToken RefreshToken[]
 }
 
 model Thread {
@@ -83,4 +84,14 @@ model Reply {
   threadId String
 
   reactions Reaction[]
+}
+
+model RefreshToken {
+  id          String   @id @unique @default(cuid())
+  hashedToken String
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  revoked     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

@@ -1,7 +1,7 @@
 import express from "express";
 
 import MessageResponse from "../interfaces/MessageResponse";
-import auth from "./auth";
+import authRoutes from "./auth/auth.routes";
 import thread from "./thread";
 
 const router = express.Router();
@@ -12,7 +12,7 @@ router.get<{}, MessageResponse>("/", (req, res) => {
   });
 });
 
-router.use("/auth", auth);
+router.use("/auth", authRoutes);
 router.use("/thread", thread);
 
 export default router;

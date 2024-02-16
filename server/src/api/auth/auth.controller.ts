@@ -248,11 +248,13 @@ export async function logout(
 }
 
 export async function googleLogin(
-  req: Request,
+  _req: Request,
   res: Response<MessageResponse>,
-  next: NextFunction
+  _next: NextFunction
 ) {
-  const googleAuthURL = `https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=${config.google_client_id}&redirect_uri=${config.google_client_secret}&scope=profile+email`;
+  const redirectUrl = config.api_base_url + "auth/google/callback";
+  const googleAuthURL = `https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=${config.google_client_id}&redirect_uri=${redirectUrl}&scope=profile+email`;
+  console.log(googleAuthURL);
   res.redirect(googleAuthURL);
 }
 
@@ -265,7 +267,7 @@ export async function googleCallback(
     const { code } = req.query;
 
     if (!code) {
-      return res.status(400).json({ message: "Missing authorization code." });
+      return res.status(400).json({ message: "missing authorization code." });
     }
 
     const tokenResponse = await axios.post(

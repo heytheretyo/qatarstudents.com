@@ -38,8 +38,8 @@ router.post(
 
 router.post("/logout", logout);
 
-router.post("/google", googleLogin);
+router.get("/google", googleLogin);
 
-router.post("/google/callback", googleCallback);
+router.get("/google/callback", googleCallback);
 
 export default router;

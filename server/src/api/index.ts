@@ -2,7 +2,7 @@ import express from "express";
 
 import MessageResponse from "../interfaces/MessageResponse";
 import authRoutes from "./auth/auth.routes";
-import thread from "./thread";
+import threadRoutes from "./thread/thread.router";
 
 const router = express.Router();
 
@@ -13,6 +13,6 @@ router.get<{}, MessageResponse>("/", (req, res) => {
 });
 
 router.use("/auth", authRoutes);
-router.use("/thread", thread);
+router.use("/thread", threadRoutes);
 
 export default router;

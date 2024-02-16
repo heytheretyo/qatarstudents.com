@@ -7,7 +7,7 @@ import { ParsedToken } from "./typings/token";
 import { config } from "./utils/config";
 import { verifyAccessToken } from "./utils/jwt";
 
-export function notFound(req: Request, res: Response, next: NextFunction) {
+export function notFound(_req: Request, res: Response, next: NextFunction) {
   res.status(404);
   const error = new Error(`you have reached an invalid route`);
   next(error);

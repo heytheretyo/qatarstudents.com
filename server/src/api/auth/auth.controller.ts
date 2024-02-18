@@ -20,6 +20,7 @@ import { sendRefreshToken } from "../../utils/sendRefreshToken";
 import cuid from "cuid";
 import { hashToken } from "../../utils/hashToken";
 import { config } from "../../utils/config";
+import { resourceLimits } from "worker_threads";
 
 export async function register(
   req: Request<{}, TokensResponseInterface, RegisterInput, RegisterQuerySchema>,
@@ -260,11 +261,13 @@ export async function googleLogin(
 
 export async function googleCallback(
   req: Request<{}, TokensResponseInterface, RefreshInput>,
-  res: Response<MessageResponse | TokensResponseInterface>,
+  res: Response<MessageResponse | TokensResponseInterface | string>,
   next: NextFunction
 ) {
   try {
+    let user;
     const { code } = req.query;
+    console.log(code);
 
     if (!code) {
       return res.status(400).json({ message: "missing authorization code." });
@@ -294,7 +297,7 @@ export async function googleCallback(
 
     const { id, name, email } = userResponse.data;
 
-    const existingUser = await prisma.user.findUnique({
+    user = await prisma.user.findUnique({
       where: { email: email as string },
     });
 
@@ -311,24 +314,26 @@ export async function googleCallback(
     // }
 
     // if there is an existing user with same email but no googleId
-    if (existingUser && !existingUser.googleId) {
+    if (user && !user.googleId) {
       return res.status(401).json({
         message: "email already associated with an account",
       } as any);
     }
 
-    if (existingUser?.googleId == id) {
-      console.log("signed in via google");
-      return res.status(200).json(existingUser as any);
-    }
+    // if (user?.googleId == id) {
+    //   console.log("signed in via google");
+    //   return res.status(200).json(user as any);
+    // }
 
-    const user = await prisma.user.create({
-      data: {
-        username: name.trim().replace(/\s/g, ""),
-        email: email as string,
-        googleId: id,
-      },
-    });
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          username: name.trim().replace(/\s/g, ""),
+          email: email as string,
+          googleId: id,
+        },
+      });
+    }
 
     const jti = cuid();
     const { accessToken, refreshToken } = generateTokens(user, jti);
@@ -340,7 +345,8 @@ export async function googleCallback(
     });
 
     sendRefreshToken(res, refreshToken);
-    res.status(200).json({
+
+    return res.status(200).json({
       access_token: accessToken,
       refresh_token: refreshToken,
     });
@@ -349,7 +355,7 @@ export async function googleCallback(
 
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError;
-      return res.status(500).json({ message: axiosError.message });
+      return res.status(400).json({ message: "invalid code query" });
     }
 
     return res.status(500).json({ message: "internal server error" });

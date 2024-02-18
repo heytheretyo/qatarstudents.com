@@ -1,3 +1,4 @@
+import GoogleAuthCallback from "../pages/auth/GoogleAuthCallback";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import Blog from "../pages/Blog";
@@ -19,6 +20,10 @@ const mainRoutes = [
   {
     path: "/blog",
     element: <Blog />,
+  },
+  {
+    path: "/auth/google/callback",
+    element: <GoogleAuthCallback />,
   },
 ];
 

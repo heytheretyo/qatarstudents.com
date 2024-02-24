@@ -24,7 +24,7 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 export type RegisterQuerySchema = z.infer<typeof registerQuerySchema>;
 
 export const loginSchema = z.object({
-  email: z.string({
+  username: z.string({
     required_error: "username is required",
   }),
   password: z

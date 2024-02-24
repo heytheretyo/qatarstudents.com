@@ -1,9 +1,5 @@
-import React from "react";
-
 import { useFormik } from "formik";
-
 import * as Yup from "yup";
-import axios from "axios";
 import { Link } from "react-router-dom";
 
 const RegisterForm = () => {
@@ -24,22 +20,26 @@ const RegisterForm = () => {
         .min(8, "must be at least 8 characters or more"),
     }),
 
-    onSubmit: async (values) => {
-      const response = await axios.post(
+    onSubmit: async (values, { setFieldError }) => {
+      const response = await fetch(
         `http://localhost:5000/api/v1/auth/register`,
         {
-          username: values.username,
-          email: values.email,
-          password: values.password,
-        },
-        {
-          withCredentials: true,
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            username: values.username,
+            email: values.email,
+            password: values.password,
+          }),
         }
       );
 
-      console.log(response);
+      const res = await response.json();
 
-      alert(JSON.stringify(values, null, 2));
+      if (res.message) {
+        setFieldError("password", res.message);
+      }
     },
   });
 

@@ -1,9 +1,5 @@
-import React from "react";
-
 import { useFormik } from "formik";
-
 import * as Yup from "yup";
-import axios from "axios";
 import { Link } from "react-router-dom";
 
 const LoginForm = () => {
@@ -18,21 +14,22 @@ const LoginForm = () => {
       password: Yup.string().required("fill the password"),
     }),
 
-    onSubmit: async (values) => {
-      const response = await axios.post(
-        `http://localhost:5000/api/v1/auth/login`,
-        {
+    onSubmit: async (values, { setFieldError }) => {
+      const response = await fetch(`http://localhost:5000/api/v1/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
           username: values.username,
           password: values.password,
-        },
-        {
-          withCredentials: true,
-        }
-      );
+        }),
+      });
 
-      console.log(response);
+      const res = await response.json();
 
-      alert(JSON.stringify(values, null, 2));
+      if (res.message) {
+        setFieldError("password", res.message);
+      }
     },
   });
 

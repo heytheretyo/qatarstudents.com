@@ -1,10 +1,11 @@
-import express, { Response, Request, NextFunction } from "express";
+import { Response, Request, NextFunction } from "express";
 import prisma from "../../utils/db";
 import axios, { AxiosError } from "axios";
 import bcrypt from "bcrypt";
-import { User } from "@prisma/client";
 import { TokensResponseInterface } from "../../interfaces/TokenResponse";
 import {
+  LoginInput,
+  LoginQuerySchema,
   RefreshInput,
   RegisterInput,
   RegisterQuerySchema,
@@ -20,7 +21,6 @@ import { sendRefreshToken } from "../../utils/sendRefreshToken";
 import cuid from "cuid";
 import { hashToken } from "../../utils/hashToken";
 import { config } from "../../utils/config";
-import { resourceLimits } from "worker_threads";
 
 export async function register(
   req: Request<{}, TokensResponseInterface, RegisterInput, RegisterQuerySchema>,
@@ -29,7 +29,6 @@ export async function register(
 ) {
   try {
     const { username, password, email } = req.body;
-    const { refreshTokenInCookie } = req.query;
 
     const existingEmail = await prisma.user.findUnique({
       where: { email: email as string },
@@ -65,30 +64,22 @@ export async function register(
 
     await addRefreshTokenToWhitelist({ jti, refreshToken, userId: user.id });
 
-    if (refreshTokenInCookie === "true") {
-      sendRefreshToken(res, refreshToken);
-      res.json({
-        access_token: accessToken,
-      });
-    } else {
-      res.status(200).json({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      });
-    }
+    sendRefreshToken(res, refreshToken);
+    res.json({
+      access_token: accessToken,
+    });
   } catch (error) {
     next(error);
   }
 }
 
 export async function login(
-  req: Request<{}, TokensResponseInterface, RegisterInput, RegisterQuerySchema>,
+  req: Request<{}, TokensResponseInterface, LoginInput, LoginQuerySchema>,
   res: Response<TokensResponseInterface | MessageResponse>,
   next: NextFunction
 ) {
   try {
     const { username, password } = req.body;
-    const { refreshTokenInCookie } = req.query;
 
     const existingUser = await prisma.user.findUnique({
       where: { username: username as string },
@@ -96,7 +87,7 @@ export async function login(
 
     if (!existingUser) {
       return res.status(401).json({
-        message: "email or password is invalid",
+        message: "username or password is invalid",
       } as any);
     }
 
@@ -111,7 +102,7 @@ export async function login(
     if (!validPassword) {
       return res
         .status(401)
-        .json({ message: "email or password is invalid" } as any);
+        .json({ message: "username or password is invalid" } as any);
     }
 
     const jti = cuid();
@@ -123,17 +114,10 @@ export async function login(
       userId: existingUser.id,
     });
 
-    if (refreshTokenInCookie === "true") {
-      sendRefreshToken(res, refreshToken);
-      res.json({
-        access_token: accessToken,
-      });
-    } else {
-      res.status(200).json({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      });
-    }
+    sendRefreshToken(res, refreshToken);
+    res.json({
+      access_token: accessToken,
+    });
   } catch (error) {
     next(error);
   }
@@ -189,19 +173,9 @@ export async function refreshTokens(
       userId: user.id,
     });
 
-    const { refreshTokenInCookie } = req.query;
-
-    if (refreshTokenInCookie === "true") {
-      sendRefreshToken(res, newRefreshToken);
-      res.json({
-        access_token: accessToken,
-      });
-    } else {
-      res.json({
-        access_token: accessToken,
-        refresh_token: newRefreshToken,
-      });
-    }
+    res.json({
+      access_token: accessToken,
+    });
   } catch (error) {
     if (
       error instanceof Error &&
@@ -266,6 +240,7 @@ export async function googleCallback(
 ) {
   try {
     let user;
+    const { refreshTokenInCookie } = req.query;
     const { code } = req.query;
     console.log(code);
 
@@ -336,25 +311,27 @@ export async function googleCallback(
     }
 
     const jti = cuid();
-    const { accessToken, refreshToken } = generateTokens(user, jti);
+    const { accessToken, refreshToken: newRefreshToken } = generateTokens(
+      user,
+      jti
+    );
 
     await addRefreshTokenToWhitelist({
       jti,
-      refreshToken,
+      refreshToken: newRefreshToken,
       userId: user.id,
     });
 
-    sendRefreshToken(res, refreshToken);
-
-    return res.status(200).json({
+    sendRefreshToken(res, newRefreshToken);
+    res.json({
       access_token: accessToken,
-      refresh_token: refreshToken,
     });
   } catch (error) {
     console.error("there was google oauth callback error:", error);
 
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError;
+      console.log(axiosError);
       return res.status(400).json({ message: "invalid code query" });
     }
 

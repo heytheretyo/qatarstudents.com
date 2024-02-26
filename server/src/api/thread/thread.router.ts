@@ -3,6 +3,7 @@ import { paramsWithIdSchema } from "../../interfaces/ParamsWithId";
 import { requireUser, validateRequest } from "../../middlewares";
 import { reactSchema, replySchema, threadSchema } from "./thread.schema";
 import {
+  createThread,
   deleteThread,
   getThread,
   getTrendingThreads,
@@ -17,8 +18,10 @@ router.get("/", requireUser, getThread);
 router.post(
   "/",
   [requireUser, validateRequest({ body: threadSchema })],
-  getTrendingThreads
+  createThread
 );
+
+router.get("/all", requireUser, getTrendingThreads);
 
 router.get("/:id", [
   requireUser,

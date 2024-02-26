@@ -28,6 +28,8 @@ app.use(
   })
 );
 
+app.use(middlewares.deserializeUser);
+
 app.get<{}, MessageResponse>("/", (req, res) => {
   res.json({
     message: "welcome to the qatarstudents.com site!",
@@ -38,6 +40,5 @@ app.use("/api/v1", api);
 
 app.use(middlewares.notFound);
 app.use(middlewares.errorHandler);
-app.use(middlewares.deserializeUser);
 
 export default app;

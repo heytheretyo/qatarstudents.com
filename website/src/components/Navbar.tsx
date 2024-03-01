@@ -6,7 +6,7 @@ function Navbar() {
       <div className="flex bg-orange-400 text-white h-[60px]">
         <div className="items-center flow-root w-full mx-4 mt-4 mb-8">
           <div className="float-right pl-3 mt-3">
-            <Link to={"/"}>
+            <Link to={"/login"}>
               <div className="text-sm font-bold xl:text-sm">
                 qatarstudents.com
               </div>
@@ -14,11 +14,11 @@ function Navbar() {
           </div>
 
           <div className="flex items-center float-left mt-3">
-            <Link to={"/explore"}>
+            {/* <Link to={"/explore"}>
               <div className="flex pl-3 pr-3">
                 <div className="text-sm font-bold xl:text-sm">explore</div>
               </div>
-            </Link>
+            </Link> */}
             <Link to={"/thread"}>
               <div className="flex pl-3 pr-3">
                 <div className="text-sm font-bold xl:text-sm">thread</div>

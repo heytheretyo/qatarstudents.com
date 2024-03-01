@@ -1,16 +1,12 @@
 import axios from "axios";
 import React, { useState } from "react";
-import { useCookies } from "react-cookie";
+import { Cookies, useCookies } from "react-cookie";
+import axiosInstance from "../utils/fetch";
 
 interface IUseFetch {
   path: string;
   method: string;
 }
-
-const instance = axios.create({
-  baseURL: "http://localhost:5000/api/v1",
-  timeout: 5000,
-});
 
 // used to fetch data such as feeds, comments, blogs, posts
 const useFetch = (
@@ -33,7 +29,10 @@ const useFetch = (
         throw new Error("Access token is missing.");
       }
 
-      const res = await instance.get(args.path, {
+      const delayDuration = Math.floor(Math.random() * 1000);
+      await new Promise((resolve) => setTimeout(resolve, delayDuration));
+
+      const res = await axiosInstance.get(args.path, {
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
@@ -43,6 +42,8 @@ const useFetch = (
 
       setData(res.data);
       setStatus("successful");
+
+      console.log(status);
     } catch (error) {
       console.error("Error fetching data:", error);
       setStatus("failed");
